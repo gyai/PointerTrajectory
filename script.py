@@ -1,6 +1,7 @@
 import PySimpleGUI as sg                                 # インポート
 from tkinter import *
 from tkinter import ttk
+
 '''
 #データ取得
  ストレージの.csvファイルを開いて中身を取得
