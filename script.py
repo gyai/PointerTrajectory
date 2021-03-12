@@ -135,14 +135,14 @@ class SubDisplay:
     def __init__(self,maindis):
         self.maindis = maindis
 
-        
+
     def make_trajectory(self):
 
 #ここで生成するsubdisplayにcanvasを使って軌跡を表示したい。
 #そのためにsublayoutに、軌跡を入れたcanvasを作る
     
         self.sublayout = [[sg.Canvas(key='-canvas-', background_color='white', size=(int(self.maindis.width*self.maindis.bairitu), int(self.maindis.height*self.maindis.bairitu)))],
-                    [sg.Text("タスク番目"), sg.Button("count", key="-count-",size=(10,1))],
+                    [sg.Button("補正off(奇数セクション)", key="-off-",size=(10,1)), sg.Button("補正on(偶数セクション)", key="-on-",size=(10,1))],
                     [sg.Text("ウィンドウを閉じる"), sg.Button("Exit",key="-EXIT-",size=(10,1))]
                     ]
 
@@ -151,7 +151,7 @@ class SubDisplay:
         self.subwindow = sg.Window("SecondDisplay",self.sublayout, element_justification='center', keep_on_top=True, size=(int(self.maindis.width*self.maindis.bairitu)+50, int(self.maindis.height*self.maindis.bairitu)+100))
         self.canvas = self.subwindow['-canvas-']    
         self.subwindow.finalize()  
-        self.count = 0
+
         #ここにMainクラスで作成した座標リストを入れる
         print(self.maindis.splitarray[0])
         for i, slist in enumerate(self.maindis.splitarray):
@@ -185,41 +185,72 @@ class SubDisplay:
             self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
         
          
-
+        self.count=0; #補正offを調べたいときは初期値を0に。補正onを調べたいなら初期値を1に。
+        
         while True:
             subevent, subvalue = self.subwindow.read()
             if subevent == "-EXIT-":
                 sg.Popup("このウィンドウを閉じます",keep_on_top=True)
                 break
-            if subevent == "-count-":
-                self.count = self.count+1
+            if subevent == "-off-":#奇数セクション
+                self.count = self.count+2
                 self.canvas.TKCanvas.delete("all")
                 for self.i, slist in enumerate(self.maindis.splitarray):
                     #count行目のみ表示
                     if self.i==self.count:
                         code = '#'+''.join(list(map(lambda x: '{:02x}'.format(int(x * 255)), colorsys.hsv_to_rgb(i/len(self.maindis.splitarray) , 1, 1))))
                         for c in range(len(slist)-1):
-                            #print(int(float(slist[c][0])*self.maindis.bairitu))
-                            #print(type(float(int(slist[c][0])*self.maindis.bairitu)))
                             self.trajectory = self.canvas.TKCanvas.create_line(
                                 int(float(slist[c][0])*self.maindis.bairitu),
-                                int(float(slist[c][1])), 
+                                int(float(slist[c][1])*self.maindis.bairitu), 
                                 int(float(slist[c+1][0])*self.maindis.bairitu), 
-                                int(float(slist[c+1][1])))
+                                int(float(slist[c+1][1])*self.maindis.bairitu)
+                            )
                             if c==0:
                                 self.startpoint = self.canvas.TKCanvas.create_rectangle(
                                     int(float(slist[c][0])*self.maindis.bairitu),
-                                    int(float(slist[c][1])), 
+                                    int(float(slist[c][1])*self.maindis.bairitu), 
                                     int(float(slist[c][0])*self.maindis.bairitu)+5,
-                                    int(float(slist[c][1]))+5 
+                                    int(float(slist[c][1])*self.maindis.bairitu)+5 
                                 )
                                 self.canvas.TKCanvas.itemconfig(self.startpoint, fill=code)  #各行をグラデーションで表示したい
                             if c==int(len(slist)-3):
                                 self.endpoint = self.canvas.TKCanvas.create_oval(
                                     int(float(slist[c+1][0])*self.maindis.bairitu),
-                                    int(float(slist[c+1][1])), 
+                                    int(float(slist[c+1][1])*self.maindis.bairitu), 
                                     int(float(slist[c+1][0])*self.maindis.bairitu)+5,
-                                    int(float(slist[c+1][1]))+5
+                                    int(float(slist[c+1][1])*self.maindis.bairitu)+5 
+                                )
+                            self.canvas.TKCanvas.itemconfig(self.trajectory, fill=code)  #各行をグラデーションで表示したい
+                        self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
+            if subevent == "-on-":#偶数セクション
+                self.count = self.count+2
+                self.canvas.TKCanvas.delete("all")
+                for self.i, slist in enumerate(self.maindis.splitarray):
+                    #count行目のみ表示
+                    if self.i==self.count:
+                        code = '#'+''.join(list(map(lambda x: '{:02x}'.format(int(x * 255)), colorsys.hsv_to_rgb(i/len(self.maindis.splitarray) , 1, 1))))
+                        for c in range(len(slist)-1):
+                            self.trajectory = self.canvas.TKCanvas.create_line(
+                                int(float(slist[c][0])*self.maindis.bairitu),
+                                int(float(slist[c][1])*self.maindis.bairitu), 
+                                int(float(slist[c+1][0])*self.maindis.bairitu), 
+                                int(float(slist[c+1][1])*self.maindis.bairitu)
+                            )
+                            if c==0:
+                                self.startpoint = self.canvas.TKCanvas.create_rectangle(
+                                    int(float(slist[c][0])*self.maindis.bairitu),
+                                    int(float(slist[c][1])*self.maindis.bairitu), 
+                                    int(float(slist[c][0])*self.maindis.bairitu)+5,
+                                    int(float(slist[c][1])*self.maindis.bairitu)+5 
+                                )
+                                self.canvas.TKCanvas.itemconfig(self.startpoint, fill=code)  #各行をグラデーションで表示したい
+                            if c==int(len(slist)-3):
+                                self.endpoint = self.canvas.TKCanvas.create_oval(
+                                    int(float(slist[c+1][0])*self.maindis.bairitu),
+                                    int(float(slist[c+1][1])*self.maindis.bairitu), 
+                                    int(float(slist[c+1][0])*self.maindis.bairitu)+5,
+                                    int(float(slist[c+1][1])*self.maindis.bairitu)+5 
                                 )
                             self.canvas.TKCanvas.itemconfig(self.trajectory, fill=code)  #各行をグラデーションで表示したい
                         self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
