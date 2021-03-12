@@ -123,7 +123,7 @@ class MainDisplay:
 class SubDisplay:
         maindis = MainDisplay()
 
-        sublayout = [[sg.Canvas(background_color='WHITE', size=(int(maindis.width*maindis.bairitu), int(maindis.height*maindis.bairitu))],
+        sublayout = [#[sg.Canvas(background_color='WHITE', size=(int(maindis.width*maindis.bairitu), int(maindis.height*maindis.bairitu))],
                     [sg.Text("ウィンドウを閉じる")],
                     [sg.Button("Exit",key="-EXIT-",size=(10,1))]]
         #keep_on_top=Trueにする
