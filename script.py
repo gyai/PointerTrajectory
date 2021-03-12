@@ -91,14 +91,14 @@ class MainDisplay:
                 _,x,y = event.split("_") #eventを_区切りで分割 右側がlistになる　変数yとxに押されたボタンのindex的なものが入る
 
                 #押されたbuttonの情報取得
-                y = int(y)*150
-                x = int(x)*150
+                self.y = int(y)*150
+                self.x = int(x)*150
 
                 #押されたボタンに対応した軌跡データ行だけ抽出
                 self.p_tra_array = [] 
                 self.splitarray = []
                 for plist in self.pointerlist: #リストの長さ分繰り返す。要素の一つめと"y""x"が一致している行だけ抜き出す
-                    if plist[0] == (str(x)+" , "+str(y)): #リストの0要素目(ターゲット座標)がボタンと同じ行だけp_tra_arrayに抜き出した
+                    if plist[0] == (str(self.x)+" , "+str(self.y)): #リストの0要素目(ターゲット座標)がボタンと同じ行だけp_tra_arrayに抜き出した
                         self.p_tra_array.append(plist) ###この時点で、押したボタンの座標に対応した行(30行分)だけ入ってる
                         sarray = []
                         for pl in plist[2:]: #plistの3番目から(スライス)
@@ -153,7 +153,7 @@ class SubDisplay:
         self.subwindow.finalize()  
 
         #ここにMainクラスで作成した座標リストを入れる
-        print(self.maindis.splitarray[0])
+        #print(self.maindis.splitarray[0])
         for i, slist in enumerate(self.maindis.splitarray):
             #splitarrayの各行の長さ(ポインター座標の数)をcountで取得
             code = '#'+''.join(list(map(lambda x: '{:02x}'.format(int(x * 255)), colorsys.hsv_to_rgb(i/len(self.maindis.splitarray) , 1, 1))))
@@ -183,8 +183,9 @@ class SubDisplay:
                     )
                 self.canvas.TKCanvas.itemconfig(self.trajectory, fill=code)  #各行をグラデーションで表示したい
             self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
-        
-         
+        self.target = self.canvas.TKCanvas.create_rectangle(int(self.maindis.x/3), int(self.maindis.y/3), int(self.maindis.x/3)+int(150/3), int(self.maindis.y/3)+int(150/3))
+        self.canvas.TKCanvas.itemconfig(self.target)
+
         self.count=0; #補正offを調べたいときは初期値を0に。補正onを調べたいなら初期値を1に。
         
         while True:
@@ -223,6 +224,8 @@ class SubDisplay:
                                 )
                             self.canvas.TKCanvas.itemconfig(self.trajectory, fill=code)  #各行をグラデーションで表示したい
                         self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
+                self.target = self.canvas.TKCanvas.create_rectangle(int(self.maindis.x/3), int(self.maindis.y/3), int(self.maindis.x/3)+int(150/3), int(self.maindis.y/3)+int(150/3))
+                self.canvas.TKCanvas.itemconfig(self.target)
             if subevent == "-on-":#偶数セクション
                 self.count = self.count+2
                 self.canvas.TKCanvas.delete("all")
@@ -254,6 +257,8 @@ class SubDisplay:
                                 )
                             self.canvas.TKCanvas.itemconfig(self.trajectory, fill=code)  #各行をグラデーションで表示したい
                         self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
+                self.target = self.canvas.TKCanvas.create_rectangle(int(self.maindis.x/3), int(self.maindis.y/3), int(self.maindis.x/3)+int(150/3), int(self.maindis.y/3)+int(150/3))
+                self.canvas.TKCanvas.itemconfig(self.target)
         self.subwindow.close()
 
 
