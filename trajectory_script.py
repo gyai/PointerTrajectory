@@ -1,8 +1,11 @@
+from itertools import count
+from traceback import print_tb
 import PySimpleGUI as sg                                 # インポート
 from tkinter import *
 from tkinter import ttk
 import csv
 import colorsys
+import math
 '''
 #データ取得
 ストレージの.csvファイルを開いて中身を取得
@@ -76,7 +79,7 @@ class MainDisplay:
     #第２画面設定->pointerの軌跡表示ウィンドウ
     def make_subdisplay(self):
         subdisp = SubDisplay(self)
-        subdisp.make_trajectory() #現状、ここが呼び出された場合SubDisplayのwhileが永遠に回って、MainDisplayのwhileがストップしてしまう
+        subdisp.make_trajectory()
         del subdisp   
 
     def main(self):
@@ -87,7 +90,7 @@ class MainDisplay:
             イベントが発生したら(key, value)のタプル形式でイベントを受け取ります'''
             event, values = self.window.read()  #  イベントループまたは Window.read 呼び出し->.readで[イベントが発生したよ]という情報をevent変数に伝えている
             print(event) #eventが'button_0_0'。valuesはよくわからんけど'{}'が出力
-
+            tarpoii = event
             if event.startswith("button"): #(今回の場合はevent)keyがbuttonから始まるなら->buttonを押した時の処理
                 _,x,y = event.split("_") #eventを_区切りで分割 右側がlistになる　変数yとxに押されたボタンのindex的なものが入る
 
@@ -135,6 +138,7 @@ class MainDisplay:
 class SubDisplay:
     def __init__(self,maindis):
         self.maindis = maindis
+        self.x,self.y = maindis.x,maindis.y
 
 
     def make_trajectory(self):
@@ -158,15 +162,15 @@ class SubDisplay:
         for i, slist in enumerate(self.maindis.splitarray):
             #splitarrayの各行の長さ(ポインター座標の数)をcountで取得
             code = '#'+''.join(list(map(lambda x: '{:02x}'.format(int(x * 255)), colorsys.hsv_to_rgb(i/len(self.maindis.splitarray) , 1, 1))))
+            #slistの中に50,50があったらそれを消して詰める
+            slist = [s for s in slist if (s != ['50.0', '50.0'])]
             for c in range(len(slist)-1):
-                #print(int(float(slist[c][0])*self.maindis.bairitu))
-                #print(type(float(int(slist[c][0])*self.maindis.bairitu)))
                 self.trajectory = self.canvas.TKCanvas.create_line(
-                    int(float(slist[c][0])*self.maindis.bairitu),
-                    int(float(slist[c][1])*self.maindis.bairitu), 
-                    int(float(slist[c+1][0])*self.maindis.bairitu), 
-                    int(float(slist[c+1][1])*self.maindis.bairitu)
-                )
+                        int(float(slist[c][0])*self.maindis.bairitu),
+                        int(float(slist[c][1])*self.maindis.bairitu), 
+                        int(float(slist[c+1][0])*self.maindis.bairitu), 
+                        int(float(slist[c+1][1])*self.maindis.bairitu)
+                    )
                 if c==0:
                     self.startpoint = self.canvas.TKCanvas.create_rectangle(
                         int(float(slist[c][0])*self.maindis.bairitu),
@@ -187,19 +191,26 @@ class SubDisplay:
         self.target = self.canvas.TKCanvas.create_rectangle(int(self.maindis.x/3), int(self.maindis.y/3), int(self.maindis.x/3)+int(150/3), int(self.maindis.y/3)+int(150/3))
         self.canvas.TKCanvas.itemconfig(self.target)
 
-        self.count=0; #補正offを調べたいときは初期値を0に。補正onを調べたいなら初期値を1に。
+        self.count = 0
         
         while True:
             subevent, subvalue = self.subwindow.read()
             if subevent == "-EXIT-":
                 sg.Popup("このウィンドウを閉じます",keep_on_top=True)
                 break
+
             if subevent == "-off-":#奇数セクション→偶数行目
                 self.canvas.TKCanvas.delete("all")
+                #クリックされたボタンのターゲット座標
+                x__ = float(self.x) 
+                y__ = float(self.y)
+                print('{}_{}'.format(math.floor((self.count/3)+1),math.floor((self.count%3)+1)))   
                 for self.i, slist in enumerate(self.maindis.splitarray):
                     #count行目のみ表示
                     if self.i==self.count:
                         code = '#'+''.join(list(map(lambda x: '{:02x}'.format(int(x * 255)), colorsys.hsv_to_rgb(i/len(self.maindis.splitarray) , 1, 1))))
+                        #slistの中に50,50があったらそれを消して詰める
+                        slist = [s for s in slist if (s != ['50.0', '50.0'])]
                         for c in range(len(slist)-1):
                             self.trajectory = self.canvas.TKCanvas.create_line(
                                 int(float(slist[c][0])*self.maindis.bairitu),
@@ -222,45 +233,18 @@ class SubDisplay:
                                     int(float(slist[c+1][0])*self.maindis.bairitu)+5,
                                     int(float(slist[c+1][1])*self.maindis.bairitu)+5 
                                 )
+                                if (x__>=float(slist[c+1][0]) or float(slist[c+1][0])>=x__+149)or(y__>=float(slist[c+1][1]) or float(slist[c+1][1])>=y__+149)  :
+                                    print('error:target({},{})~({},{})|pointer({},{})'.format(x__,y__,x__+149,y__+149,slist[c+1][0],slist[c+1][1]))
                             self.canvas.TKCanvas.itemconfig(self.trajectory, fill=code)  #各行をグラデーションで表示したい
-                        self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
-                if self.count == 0:
-                    print(str(self.count)+":2_1")
-                if self.count == 2:
-                    print(str(self.count)+":2_3")
-                if self.count == 4:
-                    print(str(self.count)+":2_5") 
-                if self.count == 6:
-                    print(str(self.count)+":3_1")
-                if self.count == 8:
-                    print(str(self.count)+":3_3")
-                if self.count == 10:
-                    print(str(self.count)+":3_5") 
-                if self.count == 12:
-                    print(str(self.count)+":4_1")
-                if self.count == 14:
-                    print(str(self.count)+":4_3")
-                if self.count == 16:
-                    print(str(self.count)+":4_5") 
-                if self.count == 18:
-                    print(str(self.count)+":1_1")
-                if self.count == 20:
-                    print(str(self.count)+":1_3")
-                if self.count == 22:
-                    print(str(self.count)+":1_5")
-                if self.count == 24:
-                    print(str(self.count)+":5_1")
-                if self.count == 26:
-                    print(str(self.count)+":5_3")
-                if self.count == 28:
-                    print(str(self.count)+":5_5")                                        
-                self.count = self.count+2   
-                if self.count > 29:
-                    self.count == 0            
+                        self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい                                      
+                
+                self.count = self.count+1
+                if self.count > 44:
+                    self.count = 0
                 self.target = self.canvas.TKCanvas.create_rectangle(int(self.maindis.x/3), int(self.maindis.y/3), int(self.maindis.x/3)+int(150/3), int(self.maindis.y/3)+int(150/3))
                 self.canvas.TKCanvas.itemconfig(self.target)
-            if subevent == "-on-":#偶数セクション→奇数行目
-                
+            
+            if subevent == "-on-":#偶数セクション→奇数行目   
                 self.canvas.TKCanvas.delete("all")
                 for self.i, slist in enumerate(self.maindis.splitarray):
                     #count行目のみ表示
@@ -358,7 +342,7 @@ class SubDisplay:
                         self.canvas.TKCanvas.itemconfig(self.endpoint, fill=code)  #各行をグラデーションで表示したい
                 self.target = self.canvas.TKCanvas.create_rectangle(int(self.maindis.x/3), int(self.maindis.y/3), int(self.maindis.x/3)+int(150/3), int(self.maindis.y/3)+int(150/3))
                 self.canvas.TKCanvas.itemconfig(self.target)
-                
+               
 
             
         self.subwindow.close()
